@@ -43,16 +43,9 @@ pipeline {
                             # Check if namespace exists, create if not
                             kubectl get namespace demo || kubectl create namespace demo
 
-                            # Check if deployment exists
-                            if kubectl get deployment/deployment-2048-game -n demo --kubeconfig=${KUBECONFIG} 2>/dev/null; then
-                                echo "Deployment exists, updating image..."
-                                kubectl -n demo --kubeconfig=${KUBECONFIG} set image deployment/deployment-2048-game \\
-                                    2048-game=${DOCKER_REGISTRY}/${DOCKER_REGISTRY_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}
-                            else
-                                echo "Deployment does not exist, creating from manifest..."
-                                envsubst < jenkins/k8s-deployment.yaml | kubectl apply -f -
-                                envsubst < jenkins/k8s-service.yaml | kubectl apply -f -
-                            fi
+                            # Always apply YAML files to sync all changes
+                            envsubst < jenkins/k8s-deployment.yaml | kubectl apply -f -
+                            envsubst < jenkins/k8s-service.yaml | kubectl apply -f -
 
                             # Rollout status
                             kubectl -n demo --kubeconfig=${KUBECONFIG} rollout status deployment/deployment-2048-game
