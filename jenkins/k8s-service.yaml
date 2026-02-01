@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: 2048-game
-  namespace: default
+  namespace: demo
   labels:
     app: 2048-game
 spec:

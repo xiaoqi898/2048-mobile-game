@@ -2,62 +2,49 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'xiaoqi898/2048-mobile-game'
-        DOCKER_TAG = "${env.BUILD_NUMBER}"
-        KUBECONFIG = credentials('k8s-config')
-        REGISTRY = 'docker.io'
+        IMAGE_NAME = '2048-mobile-game'
+        DOCKER_REGISTRY = "${env.DOCKER_REGISTRY}"
+        DOCKER_REGISTRY_CREDENTIALS = "${env.DOCKER_REGISTRY_CREDENTIALS}"
+        KUBECONFIG = "${env.KUBECONFIG}"
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                    sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+                    def appImage = docker.build("${GOCR_DOCKER_REGISTRY_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}")
+                    appImage.tag 'latest'
                 }
             }
         }
 
-        stage('Push to Registry') {
+        stage('Push Docker Image') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'docker-registry', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh """
-                            docker login ${REGISTRY} -u ${DOCKER_USER} -p ${DOCKER_PASS}
-                            docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
-                            docker push ${DOCKER_IMAGE}:latest
-                        """
+                    docker.withRegistry("https://${GOCR_DOCKER_REGISTRY}", "${GOCR_DOCKER_REGISTRY_CREDENTIALS}") {
+                        docker.image("${GOCR_DOCKER_REGISTRY_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}").push()
+                        docker.image("${GOCR_DOCKER_REGISTRY_USERNAME}/${IMAGE_NAME}:latest").push()
                     }
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
-            steps {
-                script {
-                    withKubeConfig([credentialsId: 'k8s-config']) {
-                        sh """
-                            kubectl apply -f jenkins/k8s-deployment.yaml
-                            kubectl apply -f jenkins/k8s-service.yaml
-                            kubectl set image deployment/2048-game 2048-game=${DOCKER_IMAGE}:${DOCKER_TAG} -n default
-                        """
-                    }
+            agent {
+                docker {
+                    image 'alpine/k8s:1.34.1'
+                    args '--entrypoint=""'
                 }
             }
-        }
-
-        stage('Verify Deployment') {
             steps {
                 script {
-                    sh 'sleep 10'
-                    sh 'kubectl get pods -n default | grep 2048-game'
-                    sh 'kubectl get svc -n default | grep 2048-game'
+                    withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIALS_FILE_ID}", variable: 'KUBECONFIG')]) {
+                        sh """
+                            kubectl -n demo --kubeconfig=${KUBECONFIG} set image deployment/deployment-2048-game \
+                            deployment-2048-game=${DOCKER_REGISTRY}/${DOCKER_REGISTRY_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}
+                            kubectl -n demo --kubeconfig=${KUBECONFIG} rollout status deployment/deployment-2048-game
+                        """
+                    }
                 }
             }
         }
