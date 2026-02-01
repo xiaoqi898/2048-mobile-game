@@ -40,8 +40,21 @@ pipeline {
                 script {
                     withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIALS_FILE_ID}", variable: 'KUBECONFIG')]) {
                         sh """
-                            kubectl -n demo --kubeconfig=${KUBECONFIG} set image deployment/deployment-2048-game \
-                            deployment-2048-game=${DOCKER_REGISTRY}/${DOCKER_REGISTRY_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}
+                            # Check if namespace exists, create if not
+                            kubectl get namespace demo || kubectl create namespace demo
+
+                            # Check if deployment exists
+                            if kubectl get deployment/deployment-2048-game -n demo --kubeconfig=${KUBECONFIG} 2>/dev/null; then
+                                echo "Deployment exists, updating image..."
+                                kubectl -n demo --kubeconfig=${KUBECONFIG} set image deployment/deployment-2048-game \\
+                                    deployment-2048-game=${DOCKER_REGISTRY}/${DOCKER_REGISTRY_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}
+                            else
+                                echo "Deployment does not exist, creating from manifest..."
+                                envsubst < jenkins/k8s-deployment.yaml | kubectl apply -f -
+                                envsubst < jenkins/k8s-service.yaml | kubectl apply -f -
+                            fi
+
+                            # Rollout status
                             kubectl -n demo --kubeconfig=${KUBECONFIG} rollout status deployment/deployment-2048-game
                         """
                     }
