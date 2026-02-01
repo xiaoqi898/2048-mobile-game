@@ -534,6 +534,7 @@
                     if (JSON.stringify(row) !== JSON.stringify(newRow)) {
                         moved = true;
                     }
+                    newRow = this.slide(newRow);
                     this.grid[i] = newRow;
                 }
                 return moved;
