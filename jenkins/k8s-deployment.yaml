@@ -17,7 +17,7 @@ spec:
       - name: ghcr-registry-secret
       containers:
       - name: 2048-game
-        image: ${DOCKER_REGISTRY}/${XIAOQI_GHCR_DOCKER_REGISTRY_CREDENTIALS}/2048-mobile-game:latest
+        image: ${DOCKER_REGISTRY}/${XIAOQI_GHCR_DOCKER_REGISTRY_USERNAME}/2048-mobile-game:latest
         ports:
         - containerPort: 80
         resources:
