@@ -13,6 +13,8 @@ spec:
       labels:
         app: 2048-game
     spec:
+      imagePullSecrets:
+      - name: ghcr-registry-secret
       containers:
       - name: 2048-game
         image: ${DOCKER_REGISTRY}/${DOCKER_REGISTRY_USERNAME}/2048-mobile-game:latest
