@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = '2048-mobile-game'
-        DOCKER_REGISTRY = "${env.DOCKER_REGISTRY}"
+        DOCKER_REGISTRY = "${env.GHCR_DOCKER_REGISTRY}"
         DOCKER_REGISTRY_CREDENTIALS = "${env.DOCKER_REGISTRY_CREDENTIALS}"
         KUBECONFIG = "${env.KUBECONFIG}"
     }
