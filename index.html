@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>2048 移动版</title>
+    <title>2048 移动版 - 可配置大小</title>
     <style>
         * {
             margin: 0;
@@ -18,7 +18,7 @@
             animation: gradientBG 15s ease infinite;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             padding: 20px;
             touch-action: none;
@@ -35,7 +35,7 @@
         }
 
         .game-container {
-            max-width: 520px;
+            max-width: 600px;
             width: 100%;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(20px);
@@ -71,11 +71,47 @@
             50% { transform: translateY(-20px); }
         }
 
+        .size-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .size-option {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .size-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .size-option.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: rgba(102, 126, 234, 0.8);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
             gap: 12px;
             position: relative;
@@ -83,7 +119,7 @@
         }
 
         .title {
-            font-size: 3.5rem;
+            font-size: 3rem;
             font-weight: 900;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             -webkit-background-clip: text;
@@ -145,7 +181,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
             gap: 12px;
             position: relative;
@@ -181,10 +217,25 @@
             overflow: hidden;
         }
 
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
             background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%);
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn:active {
@@ -201,22 +252,42 @@
             position: relative;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .grid-container.active {
+            display: block;
         }
 
         .grid {
             display: grid;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .grid.size-4 {
             grid-template-columns: repeat(4, 1fr);
             gap: 14px;
+        }
+
+        .grid.size-5 {
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+
+        .grid.size-6 {
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
         }
 
         .cell {
             aspect-ratio: 1;
             background: rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: bold;
             transition: all 0.2s ease;
             position: relative;
@@ -240,7 +311,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            border-radius: 12px;
+            border-radius: 10px;
             font-weight: 800;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             animation: pop 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -278,94 +349,22 @@
             }
         }
 
-        .tile-2 {
-            background: linear-gradient(135deg, #eee4da 0%, #a8d0f5 100%);
-            color: #776e65;
-            box-shadow: 0 4px 15px rgba(238, 228, 218, 0.3);
-        }
-
-        .tile-4 {
-            background: linear-gradient(135deg, #ede0c8 0%, #d197d1 100%);
-            color: #776e65;
-            box-shadow: 0 4px 15px rgba(237, 200, 200, 0.3);
-        }
-
-        .tile-8 {
-            background: linear-gradient(135deg, #f2b179 0%, #ff9e64 100%);
-            color: #f9f6f2;
-            box-shadow: 0 4px 15px rgba(242, 177, 121, 0.3);
-        }
-
-        .tile-16 {
-            background: linear-gradient(135deg, #f59563 0%, #fbbf24 100%);
-            color: #f9f6f2;
-            box-shadow: 0 4px 15px rgba(245, 149, 99, 0.3);
-        }
-
-        .tile-32 {
-            background: linear-gradient(135deg, #f67c5f 0%, #feca57 100%);
-            color: #f9f6f2;
-            box-shadow: 0 4px 15px rgba(246, 124, 95, 0.3);
-        }
-
-        .tile-64 {
-            background: linear-gradient(135deg, #f65e3b 0%, #ff6b6b 100%);
-            color: #f9f6f2;
-            box-shadow: 0 4px 15px rgba(246, 94, 59, 0.3);
-        }
-
-        .tile-128 {
-            background: linear-gradient(135deg, #edcf72 0%, #ff8c42 100%);
-            color: #f9f6f2;
-            font-size: 1.8rem;
-            box-shadow: 0 6px 20px rgba(237, 207, 114, 0.3);
-        }
-
-        .tile-256 {
-            background: linear-gradient(135deg, #edcc61 0%, #fa709a 100%);
-            color: #f9f6f2;
-            font-size: 1.8rem;
-            box-shadow: 0 6px 20px rgba(237, 204, 97, 0.3);
-        }
-
-        .tile-512 {
-            background: linear-gradient(135deg, #edc850 0%, #ffbe0b 100%);
-            color: #f9f6f2;
-            font-size: 1.8rem;
-            box-shadow: 0 6px 20px rgba(237, 200, 80, 0.3);
-        }
-
-        .tile-1024 {
-            background: linear-gradient(135deg, #edc53f 0%, #f7d794 100%);
-            color: #f9f6f2;
-            font-size: 1.6rem;
-            box-shadow: 0 6px 20px rgba(237, 197, 63, 0.3);
-        }
-
-        .tile-2048 {
-            background: linear-gradient(135deg, #edc22e 0%, #f59e0b 100%);
-            color: #f9f6f2;
-            font-size: 1.6rem;
-            box-shadow: 0 6px 20px rgba(237, 194, 46, 0.3);
-        }
-
-        .tile-super {
-            background: linear-gradient(135deg, #3c3a32 0%, #ff0844 100%);
-            color: #f9f6f2;
-            font-size: 1.4rem;
-            box-shadow: 0 8px 25px rgba(255, 0, 0, 0.5);
-            animation: pulse 2s ease-in-out infinite;
-        }
+        .tile-2 { background: linear-gradient(135deg, #eee4da 0%, #a8d0f5 100%); color: #776e65; }
+        .tile-4 { background: linear-gradient(135deg, #ede0c8 0%, #d197d1 100%); color: #776e65; }
+        .tile-8 { background: linear-gradient(135deg, #f2b179 0%, #ff9e64 100%); color: #f9f6f2; }
+        .tile-16 { background: linear-gradient(135deg, #f59563 0%, #fbbf24 100%); color: #f9f6f2; }
+        .tile-32 { background: linear-gradient(135deg, #f67c5f 0%, #feca57 100%); color: #f9f6f2; }
+        .tile-64 { background: linear-gradient(135deg, #f65e3b 0%, #ff6b6b 100%); color: #f9f6f2; }
+        .tile-128 { background: linear-gradient(135deg, #edcf72 0%, #ff8c42 100%); color: #f9f6f2; font-size: 1.6rem; box-shadow: 0 6px 20px rgba(237, 207, 114, 0.3); }
+        .tile-256 { background: linear-gradient(135deg, #edcc61 0%, #fa709a 100%); color: #f9f6f2; font-size: 1.6rem; box-shadow: 0 6px 20px rgba(237, 204, 97, 0.3); }
+        .tile-512 { background: linear-gradient(135deg, #edc850 0%, #ffbe0b 100%); color: #f9f6f2; font-size: 1.6rem; box-shadow: 0 6px 20px rgba(237, 200, 80, 0.3); }
+        .tile-1024 { background: linear-gradient(135deg, #edc53f 0%, #f7d794 100%); color: #f9f6f2; font-size: 1.4rem; box-shadow: 0 6px 20px rgba(237, 197, 63, 0.3); }
+        .tile-2048 { background: linear-gradient(135deg, #edc22e 0%, #f59e0b 100%); color: #f9f6f2; font-size: 1.4rem; box-shadow: 0 6px 20px rgba(237, 194, 46, 0.3); }
+        .tile-super { background: linear-gradient(135deg, #3c3a32 0%, #ff0844 100%); color: #f9f6f2; font-size: 1.2rem; box-shadow: 0 8px 25px rgba(255, 0, 0, 0.5); animation: pulse 2s ease-in-out infinite; }
 
         @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-                box-shadow: 0 8px 25px rgba(255, 0, 0, 0.5);
-            }
-            50% {
-                transform: scale(1.02);
-                box-shadow: 0 12px 35px rgba(255, 0, 0, 0.7);
-            }
+            0%, 100% { transform: scale(1); box-shadow: 0 8px 25px rgba(255, 0, 0, 0.5); }
+            50% { transform: scale(1.02); box-shadow: 0 12px 35px rgba(255, 0, 0, 0.7); }
         }
 
         .overlay {
@@ -416,7 +415,7 @@
         }
 
         .instructions {
-            margin-top: 24px;
+            margin-top: 20px;
             text-align: center;
             color: rgba(255, 255, 255, 0.7);
             font-size: 0.9rem;
@@ -440,10 +439,16 @@
 
             .game-container {
                 padding: 16px;
+                border-radius: 20px;
             }
 
             .title {
-                font-size: 2.2rem;
+                font-size: 2rem;
+            }
+
+            .size-option {
+                padding: 10px 18px;
+                font-size: 0.9rem;
             }
 
             .score-box {
@@ -456,31 +461,32 @@
             }
 
             .grid {
-                gap: 10px;
+                gap: 8px;
             }
 
             .grid-container {
                 padding: 10px;
+                border-radius: 12px;
             }
 
             .cell {
-                font-size: 1.6rem;
-            }
-
-            .tile {
-                font-size: 1.6rem;
-            }
-
-            .tile-128, .tile-256, .tile-512 {
                 font-size: 1.4rem;
             }
 
-            .tile-1024, .tile-2048 {
+            .tile {
+                font-size: 1.4rem;
+            }
+
+            .tile-128, .tile-256, .tile-512 {
                 font-size: 1.2rem;
             }
 
-            .tile-super {
+            .tile-1024, .tile-2048 {
                 font-size: 1.0rem;
+            }
+
+            .tile-super {
+                font-size: 0.9rem;
             }
 
             .overlay h2 {
@@ -503,22 +509,33 @@
 
         @media (max-width: 360px) {
             .title {
-                font-size: 1.8rem;
+                font-size: 1.6rem;
             }
 
             .score-box {
                 padding: 8px 14px;
-                min-width: 70px;
+                min-width: 65px;
+            }
+
+            .size-option {
+                padding: 8px 14px;
+                font-size: 0.8rem;
             }
 
             .grid {
-                gap: 8px;
+                gap: 6px;
             }
         }
     </style>
 </head>
 <body>
     <div class="game-container">
+        <div class="size-selector">
+            <button class="size-option active" data-size="4">4×4</button>
+            <button class="size-option" data-size="5">5×5</button>
+            <button class="size-option" data-size="6">6×6</button>
+        </div>
+
         <div class="header">
             <h1 class="title">2048</h1>
             <div class="score-container">
@@ -534,12 +551,12 @@
         </div>
 
         <div class="controls">
-            <div class="game-status" id="game-status">游戏开始</div>
+            <div class="game-status" id="game-status">选择大小开始</div>
             <button class="btn" id="new-game">新游戏</button>
         </div>
 
-        <div class="grid-container" id="grid-container">
-            <div class="grid" id="grid">
+        <div class="grid-container active" id="grid-container">
+            <div class="grid size-4" id="grid">
                 <!-- Cells will be generated by JS -->
             </div>
             <div class="overlay" id="overlay">
@@ -577,15 +594,17 @@
                 this.overlayMessage = document.getElementById('overlay-message');
                 this.overlayBtn = document.getElementById('overlay-btn');
                 this.newGameBtn = document.getElementById('new-game');
+                this.sizeOptions = document.querySelectorAll('.size-option');
 
                 this.tileSize = 0;
                 this.gap = 0;
 
-                this.init();
+                this.init(4);
                 this.setupEventListeners();
             }
 
-            init() {
+            init(size) {
+                this.size = size;
                 this.grid = Array(this.size).fill(null).map(() => Array(this.size).fill(0));
                 this.score = 0;
                 this.gameOver = false;
@@ -602,6 +621,7 @@
 
             createGrid() {
                 this.gridElement.innerHTML = '';
+                this.gridElement.className = `grid size-${this.size}`;
                 for (let i = 0; i < this.size * this.size; i++) {
                     const cell = document.createElement('div');
                     cell.className = 'cell';
@@ -611,7 +631,13 @@
 
             calculateTileSize() {
                 const containerWidth = this.gridContainer.offsetWidth - 32;
-                this.gap = window.innerWidth <= 480 ? 10 : 14;
+                if (this.size === 4) {
+                    this.gap = window.innerWidth <= 480 ? 10 : 14;
+                } else if (this.size === 5) {
+                    this.gap = window.innerWidth <= 480 ? 8 : 10;
+                } else {
+                    this.gap = window.innerWidth <= 480 ? 6 : 8;
+                }
                 this.tileSize = (containerWidth - (this.size - 1) * this.gap) / this.size;
             }
 
@@ -767,11 +793,11 @@
                     }
                     oldCol.reverse();
                     let newCol = this.mergeRow(oldCol).reverse();
-                    if (newCol.join('') !== oldCol.reverse().join('')) {
-                        moved = true;
-                    }
                     for (let i = 0; i < this.size; i++) {
                         this.grid[i][j] = newCol[i];
+                    }
+                    if (newCol.join('') !== oldCol.reverse().join('')) {
+                        moved = true;
                     }
                 }
                 return moved;
@@ -845,6 +871,21 @@
             }
 
             setupEventListeners() {
+                // 大小选择器
+                this.sizeOptions.forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        const size = parseInt(e.target.dataset.size);
+                        this.init(size);
+                        
+                        // 更新选中状态
+                        this.sizeOptions.forEach(opt => opt.classList.remove('active'));
+                        e.target.classList.add('active');
+                        
+                        // 保存大小偏好
+                        localStorage.setItem('game2048_size', size);
+                    });
+                });
+
                 document.addEventListener('keydown', (e) => {
                     if (this.gameOver && !this.won) return;
 
@@ -909,7 +950,7 @@
                 });
 
                 this.newGameBtn.addEventListener('click', () => {
-                    this.init();
+                    this.init(this.size);
                 });
 
                 this.overlayBtn.addEventListener('click', () => {
@@ -918,7 +959,7 @@
                         this.hideOverlay();
                         this.statusElement.textContent = '继续挑战';
                     } else {
-                        this.init();
+                        this.init(this.size);
                     }
                 });
 
