@@ -43,7 +43,11 @@ pipeline {
                             # Check if namespace exists, create if not
                             kubectl get namespace demo || kubectl create namespace demo
 
-                            # Always apply YAML files to sync all changes
+                            # Update image version in YAML files
+                            sed -i 's|:latest|:${BUILD_NUMBER}|g' jenkins/k8s-deployment.yaml
+                            sed -i 's|:latest|:${BUILD_NUMBER}|g' jenkins/k8s-service.yaml
+
+                            # Apply YAML files with versioned image
                             envsubst < jenkins/k8s-deployment.yaml | kubectl apply -f -
                             envsubst < jenkins/k8s-service.yaml | kubectl apply -f -
 
