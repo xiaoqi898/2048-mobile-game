@@ -774,14 +774,15 @@
             moveDown() {
                 let moved = false;
                 for (let j = 0; j < this.size; j++) {
-                    let oldCol = [this.grid[0][j], this.grid[1][j], this.grid[2][j], this.grid[3][j]].slice().reverse();
-                    let newCol = this.slideAndMergeRow(oldCol).reverse();
-                    for (let i = 0; i < this.size; i++) {
-                        this.grid[i][j] = newCol[i];
-                    }
-                    if (newCol.join('') !== oldCol.reverse().join('')) {
+                    let oldCol = [this.grid[0][j], this.grid[1][j], this.grid[2][j], this.grid[3][j]];
+                    let newCol = this.slideAndMergeRow(oldCol.slice().reverse()).reverse();
+                    if (newCol.join('') !== oldCol.join('')) {
                         moved = true;
                     }
+                    this.grid[0][j] = newCol[0];
+                    this.grid[1][j] = newCol[1];
+                    this.grid[2][j] = newCol[2];
+                    this.grid[3][j] = newCol[3];
                 }
                 return moved;
             }
