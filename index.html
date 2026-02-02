@@ -361,7 +361,7 @@
                 this.size = 4;
                 this.grid = [];
                 this.score = 0;
-                this.bestScore = localStorage.getItem('best2048') || 0;
+                this.bestScore = parseInt(localStorage.getItem('best2048')) || 0;
                 this.gameOver = false;
                 this.won = false;
                 this.continueAfterWin = false;
@@ -409,7 +409,7 @@
             }
 
             calculateTileSize() {
-                const containerWidth = this.gridContainer.offsetWidth - 24; // padding
+                const containerWidth = this.gridContainer.offsetWidth - 24;
                 this.gap = window.innerWidth <= 480 ? 8 : 12;
                 this.tileSize = (containerWidth - (this.size - 1) * this.gap) / this.size;
             }
@@ -434,7 +434,7 @@
 
             render() {
                 this.calculateTileSize();
-                
+
                 // Remove existing tiles
                 const existingTiles = this.gridContainer.querySelectorAll('.tile');
                 existingTiles.forEach(tile => tile.remove());
@@ -445,20 +445,20 @@
                         if (this.grid[i][j] !== 0) {
                             const tile = document.createElement('div');
                             const value = this.grid[i][j];
-                            
+
                             let tileClass = value <= 2048 ? `tile-${value}` : 'tile-super';
                             tile.className = `tile ${tileClass}`;
                             tile.textContent = value;
-                            
+
                             const x = j * (this.tileSize + this.gap);
                             const y = i * (this.tileSize + this.gap);
-                            
+
                             tile.style.width = `${this.tileSize}px`;
                             tile.style.height = `${this.tileSize}px`;
                             tile.style.left = `${x + 12}px`;
                             tile.style.top = `${y + 12}px`;
                             tile.style.fontSize = value >= 1024 ? `${this.tileSize * 0.35}px` : `${this.tileSize * 0.45}px`;
-                            
+
                             this.gridContainer.appendChild(tile);
                         }
                     }
@@ -496,18 +496,24 @@
             }
 
             slide(row) {
-                let arr = row.filter(val => val !== 0);
-                let missing = this.size - arr.length;
-                let zeros = Array(missing).fill(0);
-                return zeros.concat(arr);
+                // Remove zeros and shift all elements left
+                return row.filter(val => val !== 0);
+            }
+
+            fill(row) {
+                // Pad with zeros on the right to reach size 4
+                while (row.length < this.size) {
+                    row.push(0);
+                }
             }
 
             combine(row) {
-                for (let i = this.size - 1; i > 0; i--) {
-                    if (row[i] !== 0 && row[i] === row[i - 1]) {
+                // Combine adjacent equal elements, each element can only be merged once
+                for (let i = 0; i < row.length - 1; i++) {
+                    if (row[i] !== 0 && row[i] === row[i + 1]) {
                         row[i] *= 2;
                         this.score += row[i];
-                        row[i - 1] = 0;
+                        row[i + 1] = 0;
                     }
                 }
                 return row;
@@ -516,12 +522,24 @@
             moveLeft() {
                 let moved = false;
                 for (let i = 0; i < this.size; i++) {
+                    let oldRow = [...this.grid[i]];
                     let row = this.grid[i];
-                    let newRow = this.combine(this.slide(row));
-                    if (JSON.stringify(row) !== JSON.stringify(newRow)) {
+
+                    // 1. Slide left (remove zeros)
+                    let slided = this.slide(row);
+
+                    // 2. Combine adjacent elements
+                    let combined = this.combine(slided);
+
+                    // 3. Slide again (remove zeros created by combine)
+                    let result = this.slide(combined);
+
+                    // 4. Fill with zeros on the right
+                    this.fill(result);
+
+                    if (JSON.stringify(oldRow) !== JSON.stringify(this.grid[i])) {
                         moved = true;
                     }
-                    this.grid[i] = this.slide(newRow);
                 }
                 return moved;
             }
@@ -529,13 +547,22 @@
             moveRight() {
                 let moved = false;
                 for (let i = 0; i < this.size; i++) {
+                    let oldRow = [...this.grid[i]];
                     let row = this.grid[i];
-                    let newRow = this.combine(this.slide(row.reverse())).reverse();
-                    if (JSON.stringify(row) !== JSON.stringify(newRow)) {
+
+                    // Reverse, then do same as moveLeft
+                    row.reverse();
+                    let slided = this.slide(row);
+                    let combined = this.combine(slided);
+                    let result = this.slide(combined);
+                    this.fill(result);
+                    result.reverse();
+
+                    this.grid[i] = result;
+
+                    if (JSON.stringify(oldRow) !== JSON.stringify(this.grid[i])) {
                         moved = true;
                     }
-                    newRow = this.slide(newRow);
-                    this.grid[i] = newRow;
                 }
                 return moved;
             }
@@ -543,14 +570,27 @@
             moveUp() {
                 let moved = false;
                 for (let j = 0; j < this.size; j++) {
-                    let row = [this.grid[0][j], this.grid[1][j], this.grid[2][j], this.grid[3][j]];
-                    let newRow = this.combine(this.slide(row));
-                    if (JSON.stringify(row) !== JSON.stringify(newRow)) {
-                        moved = true;
-                    }
-                    newRow = this.slide(newRow);
+                    let oldCol = [this.grid[0][j], this.grid[1][j], this.grid[2][j], this.grid[3][j]];
+
+                    // 1. Slide up (remove zeros)
+                    let slided = this.slide(oldCol);
+
+                    // 2. Combine adjacent elements
+                    let combined = this.combine(slided);
+
+                    // 3. Slide again (remove zeros created by combine)
+                    let result = this.slide(combined);
+
+                    // 4. Fill with zeros at the bottom
+                    this.fill(result);
+
+                    // Update the column
                     for (let i = 0; i < this.size; i++) {
-                        this.grid[i][j] = newRow[i];
+                        this.grid[i][j] = result[i];
+                    }
+
+                    if (JSON.stringify(oldCol) !== JSON.stringify(result)) {
+                        moved = true;
                     }
                 }
                 return moved;
@@ -559,14 +599,23 @@
             moveDown() {
                 let moved = false;
                 for (let j = 0; j < this.size; j++) {
-                    let row = [this.grid[0][j], this.grid[1][j], this.grid[2][j], this.grid[3][j]];
-                    let newRow = this.combine(this.slide(row.reverse())).reverse();
-                    if (JSON.stringify(row) !== JSON.stringify(newRow)) {
-                        moved = true;
-                    }
-                    newRow = this.slide(newRow);
+                    let oldCol = [this.grid[0][j], this.grid[1][j], this.grid[2][j], this.grid[3][j]];
+
+                    // Reverse, then do same as moveUp
+                    oldCol.reverse();
+                    let slided = this.slide(oldCol);
+                    let combined = this.combine(slided);
+                    let result = this.slide(combined);
+                    this.fill(result);
+                    result.reverse();
+
+                    // Update the column
                     for (let i = 0; i < this.size; i++) {
-                        this.grid[i][j] = newRow[i];
+                        this.grid[i][j] = result[i];
+                    }
+
+                    if (JSON.stringify([...oldCol].reverse()) !== JSON.stringify(result)) {
+                        moved = true;
                     }
                 }
                 return moved;
@@ -640,7 +689,7 @@
                 // Keyboard controls
                 document.addEventListener('keydown', (e) => {
                     if (this.gameOver && !this.won) return;
-                    
+
                     const keyMap = {
                         'ArrowUp': 'up',
                         'ArrowDown': 'down',
@@ -679,7 +728,7 @@
 
                 this.gridContainer.addEventListener('touchend', (e) => {
                     if (this.gameOver && !this.won) return;
-                    
+
                     touchEndX = e.changedTouches[0].clientX;
                     touchEndY = e.changedTouches[0].clientY;
 
