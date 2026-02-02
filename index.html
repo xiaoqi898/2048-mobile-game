@@ -58,7 +58,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-image:
+            background-image: 
                 radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.3) 0%, transparent 50%),
                 radial-gradient(circle at 80% 70%, rgba(237, 100, 166, 0.3) 0%, transparent 50%),
                 radial-gradient(circle at 40% 80%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
@@ -182,10 +182,25 @@
             overflow: hidden;
         }
 
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
             background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%);
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn:active {
@@ -272,7 +287,7 @@
                 transform: scale(1) rotate(0deg);
             }
             50% {
-                transform: scale(1.15) rotate(5deg);
+                transform: scale(1.2) rotate(5deg);
             }
             100% {
                 transform: scale(1) rotate(0deg);
@@ -696,20 +711,27 @@
                 return moved;
             }
 
-            operate(row) {
-                // slide: remove zeros, shift left
-                let arr = row.filter(val => val !== 0);
+            // 关键：使用新的合并逻辑，防止空行出现
+            mergeRow(row) {
+                let moved = false;
+                let skip = [false, false, false, false];
 
-                // combine: merge adjacent same elements
-                for (let i = 0; i < arr.length - 1; i++) {
-                    if (arr[i] !== 0 && arr[i] === arr[i + 1]) {
-                        arr[i] *= 2;
-                        this.score += arr[i];
-                        arr[i + 1] = 0;
+                // 第一步：合并相邻的相同元素
+                for (let i = 0; i < this.size - 1; i++) {
+                    if (row[i] !== 0 && row[i] === row[i + 1] && !skip[i] && !skip[i + 1]) {
+                        row[i] *= 2;
+                        this.score += row[i];
+                        row[i + 1] = 0;
+                        skip[i] = true;
+                        skip[i + 1] = true;
+                        moved = true;
                     }
                 }
 
-                // slide again: fill with zeros on right
+                // 第二步：将非0元素向左移动
+                let arr = row.filter(val => val !== 0);
+
+                // 第三步：用0补齐到size 4
                 while (arr.length < this.size) {
                     arr.push(0);
                 }
@@ -721,7 +743,7 @@
                 let moved = false;
                 for (let i = 0; i < this.size; i++) {
                     let oldRow = [...this.grid[i]];
-                    let newRow = this.operate(this.grid[i]);
+                    let newRow = this.mergeRow(this.grid[i]);
                     if (newRow.join('') !== oldRow.join('')) {
                         moved = true;
                     }
@@ -735,7 +757,7 @@
                 for (let i = 0; i < this.size; i++) {
                     let oldRow = [...this.grid[i]];
                     let row = this.grid[i].slice().reverse();
-                    let newRow = this.operate(row).reverse();
+                    let newRow = this.mergeRow(row).reverse();
                     this.grid[i] = newRow;
                     if (newRow.join('') !== oldRow.join('')) {
                         moved = true;
@@ -748,7 +770,7 @@
                 let moved = false;
                 for (let j = 0; j < this.size; j++) {
                     let oldCol = [this.grid[0][j], this.grid[1][j], this.grid[2][j], this.grid[3][j]];
-                    let newCol = this.operate(oldCol);
+                    let newCol = this.mergeRow(oldCol);
                     if (newCol.join('') !== oldCol.join('')) {
                         moved = true;
                     }
@@ -763,7 +785,7 @@
                 let moved = false;
                 for (let j = 0; j < this.size; j++) {
                     let oldCol = [this.grid[3][j], this.grid[2][j], this.grid[1][j], this.grid[0][j]];
-                    let newCol = this.operate(oldCol).reverse();
+                    let newCol = this.mergeRow(oldCol).reverse();
                     for (let i = 0; i < this.size; i++) {
                         this.grid[i][j] = newCol[i];
                     }
@@ -888,14 +910,12 @@
 
                     if (Math.max(absDeltaX, absDeltaY) > minSwipeDistance) {
                         if (absDeltaX > absDeltaY) {
-                            // Horizontal swipe
                             if (deltaX > 0) {
                                 this.move('right');
                             } else {
                                 this.move('left');
                             }
                         } else {
-                            // Vertical swipe
                             if (deltaY > 0) {
                                 this.move('down');
                             } else {
@@ -911,12 +931,10 @@
 
                 this.overlayBtn.addEventListener('click', () => {
                     if (this.won && !this.gameOver) {
-                        // Continue after winning
                         this.continueAfterWin = true;
                         this.hideOverlay();
                         this.statusElement.textContent = '继续挑战';
                     } else {
-                        // New game
                         this.init();
                     }
                 });
