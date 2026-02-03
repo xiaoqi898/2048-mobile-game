@@ -1,0 +1,27 @@
+# Node modules
+node_modules/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# Build outputs
+dist/
+build/
+
+# K8s resources that should be dynamically created (not pushed to GitHub)
+loadbalancer-service.yaml
